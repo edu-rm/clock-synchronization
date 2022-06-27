@@ -108,6 +108,9 @@ class Processo2 {
         } catch (err) {
             servidoresRede = servidoresRede.filter(s => s !== 4);
         }
+
+        const myIndex = servidoresRede.findIndex(s => s === this.serverNumber);
+        this.sucessor = servidoresRede?.[myIndex+1] || servidoresRede?.[0];
     }
     
     setarCoordenador(coordenador) {
@@ -163,6 +166,9 @@ class Processo3 {
         } catch (err) {
             servidoresRede = servidoresRede.filter(s => s !== 4);
         }
+
+        const myIndex = servidoresRede.findIndex(s => s === this.serverNumber);
+        this.sucessor = servidoresRede?.[myIndex+1] || servidoresRede?.[0];
     }
 
     setarCoordenador(coordenador) {
@@ -216,6 +222,9 @@ class Processo4 {
         } catch (err) {
             servidoresRede = servidoresRede.filter(s => s !== 3);
         }
+
+        const myIndex = servidoresRede.findIndex(s => s === this.serverNumber);
+        this.sucessor = servidoresRede?.[myIndex+1] || servidoresRede?.[0];
     }
 
     setarCoordenador(coordenador) {
