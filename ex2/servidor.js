@@ -1,7 +1,12 @@
 const socketIo = require('socket.io');
 const http = require("http")
 const readline = require('readline');
-const { io } = require("socket.io-client");
+const { io: io1 } = require("socket.io-client");
+const { io: io2  } = require("socket.io-client1");
+const { io: io3 } = require("socket.io-client2");
+const { io: io4 } = require("socket.io-client3");
+
+const delay = ms => new Promise(res => setTimeout(res, ms));
 
 const rl = readline.createInterface({
     input: process.stdin,
@@ -37,22 +42,25 @@ class Processo1 {
             console.log('Processo1: nova conexão')
         })
     }
-    conectarOutrosServidores () {
+    async conectarOutrosServidores () {
         let servidoresRede = [1, 2, 3, 4]
         try {
-            this.server3 = io("http://localhost:3000");
+            this.server3 = await io1("http://localhost:3000");
         } catch (err) {
+            console.log('Erro', err)
             servidoresRede = servidoresRede.filter(s => s !== 3);
         }
         try {
-            this.server2 = io("http://localhost:2000");
+            this.server2 = await io1("http://localhost:2000");
         } catch (err) {
+            console.log('Erro', err)
             servidoresRede = servidoresRede.filter(s => s !== 2);
         }
 
         try {
-            this.server4 = io("http://localhost:4000");
+            this.server4 = await io1("http://localhost:4000");
         } catch (err) {
+            console.log('Erro', err)
             servidoresRede = servidoresRede.filter(s => s !== 4);
         }
     }
@@ -86,26 +94,39 @@ class Processo2 {
           
           this.io.on('connection', (socket) => {
             console.log('Processo2: nova conexão')
+
+            
+            socket.on('health', () => {
+                socket.emit('health-response')
+            })
+
+            this.io.on('health', () => {
+                console.log('teste')
+            })
         }) 
           
     }
 
-    conectarOutrosServidores () {
+    async conectarOutrosServidores () {
         let servidoresRede = [1, 2, 3, 4]
         try {
-            this.server1 = io("http://localhost:1000");
+            this.io
+            this.server1 = await io2("http://localhost:1000");
         } catch (err) {
+            console.log('Erro', err)
             servidoresRede = servidoresRede.filter(s => s !== 1);
         }
         try {
-            this.server3 = io("http://localhost:3000");
+            this.server3 = await io2("http://localhost:3000");
         } catch (err) {
+            console.log('Erro', err)
             servidoresRede = servidoresRede.filter(s => s !== 3);
         }
 
         try {
-            this.server4 = io("http://localhost:4000");
+            this.server4 = await io2("http://localhost:4000");
         } catch (err) {
+            console.log('Erro', err)
             servidoresRede = servidoresRede.filter(s => s !== 4);
         }
 
@@ -144,35 +165,57 @@ class Processo3 {
         
           this.io.on('connection', (socket) => {
             console.log('Processo3: nova conexão')
+
+            socket.on('health', () => {
+                console.log('Health')
+                socket.emit('health-response')
+            })
         })
     }
 
-    conectarOutrosServidores() {
+    async conectarOutrosServidores() {
 
         let servidoresRede = [1, 2, 3, 4]
         try {
-            this.server1 = io("http://localhost:1000");
+            this.server1 = await io("http://localhost:1000");
         } catch (err) {
+            console.log('Erro', err)
             servidoresRede = servidoresRede.filter(s => s !== 1);
         }
         try {
-            this.server2 = io("http://localhost:2000");
+            this.server2 = await io("http://localhost:2000");
         } catch (err) {
+            console.log('Erro', err)
             servidoresRede = servidoresRede.filter(s => s !== 2);
         }
 
         try {
-            this.server4 = io("http://localhost:4000");
+            this.server4 = await io("http://localhost:4000");
         } catch (err) {
+            console.log('Erro', err)
             servidoresRede = servidoresRede.filter(s => s !== 4);
+        }
+
+        this.servers = {
+            server1: this.server1,
+            server2: this.server2,
+            server3: this.server3,
+
         }
 
         const myIndex = servidoresRede.findIndex(s => s === this.serverNumber);
         this.sucessor = servidoresRede?.[myIndex+1] || servidoresRede?.[0];
+        this.servidoresRede = servidoresRede;
     }
 
     setarCoordenador(coordenador) {
         this.coordenador = coordenador;
+    }
+
+    verificarCoordenador () {
+        console.log('Processo 3: Emiti Health', this.coordenador, this.servidoresRede)
+        this.servers[`server${this.coordenador}`].emit('health')
+
     }
 }
 
@@ -204,22 +247,25 @@ class Processo4 {
         })
     }
 
-    conectarOutrosServidores () {  
+    async conectarOutrosServidores () {  
         let servidoresRede = [1, 2, 3, 4]
         try {
-            this.server1 = io("http://localhost:1000");
+            this.server1 = await io("http://localhost:1000");
         } catch (err) {
+            console.log('Erro', err)
             servidoresRede = servidoresRede.filter(s => s !== 1);
         }
         try {
-            this.server2 = io("http://localhost:2000");
+            this.server2 = await io("http://localhost:2000");
         } catch (err) {
+            console.log('Erro', err)
             servidoresRede = servidoresRede.filter(s => s !== 2);
         }
 
         try {
-            this.server3 = io("http://localhost:3000");
+            this.server3 = await io("http://localhost:3000");
         } catch (err) {
+            console.log('Erro', err)
             servidoresRede = servidoresRede.filter(s => s !== 3);
         }
 
@@ -233,30 +279,55 @@ class Processo4 {
 }
 
 
-const processo1 = new Processo1();
-const processo2 = new Processo2();
-const processo3 = new Processo3();
-const processo4 = new Processo4();
+async function levantarProcessos() {
+    
+    // const processo1 = new Processo1();
+    const processo2 = new Processo2();
+    const processo3 = new Processo3();
+    // const processo4 = new Processo4();
 
-processo1.conectarOutrosServidores()
-processo2.conectarOutrosServidores()
-processo3.conectarOutrosServidores()
-processo4.conectarOutrosServidores()
+    // const processos = {
+    //     processo1,
+    //     processo2,
+    //     processo3,
+    //     processo4
+    // }
+
+    // const coordenador = Math.floor(Math.random() * 4) + 1
+    const coordenador = 2;
+
+    console.log(coordenador)
+    // processo1.conectarOutrosServidores()
+    // processo1.setarCoordenador(coordenador)
+
+    processo2.conectarOutrosServidores()
+    processo2.setarCoordenador(coordenador)
+
+    processo3.conectarOutrosServidores()
+    processo3.setarCoordenador(coordenador)
+    await delay(2000)
+    processo3.verificarCoordenador()
+
+    // processo4.conectarOutrosServidores()
+    // processo4.setarCoordenador(coordenador)
 
 
-function coordenadorCai() {
+    function coordenadorCai() {
 
+    }
+
+
+    function processosInativos() {
+
+    }
+
+
+    function percebendoInatividadeCoordenador() {
+
+    }
 }
 
-
-function processosInativos() {
-
-}
-
-
-function percebendoInatividadeCoordenador() {
-
-}
+levantarProcessos()
 
 /*
 const server = http.createServer(function(req,res){
