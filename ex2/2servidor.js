@@ -44,8 +44,6 @@ class Base {
 
     definirNovoCoordenador(novoCoordenador, mensagem) {
         let sucessorAtivo = this.proximoAtivo()
-        console.log('AQUI sdf sd', sucessorAtivo)
-
         if (mensagem.length > 0) {   
             this.servers[String(sucessorAtivo)].definirNovoCoordenador(novoCoordenador, mensagem.filter(p => p !== this.serverNumber))
             this.coordenador = novoCoordenador
@@ -57,19 +55,48 @@ class Base {
         console.log(`[${this.serverNumber}] ` +'recebi mensagem eleição', mensagem)
 
         if (mensagem.includes(this.serverNumber)) {
-            console.log(`[${this.serverNumber}] ` +'Fez a volta', mensagem, Math.max(...mensagem))
-            console.log('aqui1', Math.max(...mensagem))
             const novoCoordenador = Math.max(...mensagem);
-            this.definirNovoCoordenador(Math.max(...mensagem), mensagem.filter(p => p !== this.serverNumber));
+
+            console.log(`[${this.serverNumber}] ` +'Fez a volta', mensagem, novoCoordenador)
+            this.definirNovoCoordenador(novoCoordenador, mensagem.filter(p => p !== this.serverNumber));
 
         } else {
             let sucessorAtivo = 0;
 
             sucessorAtivo = this.proximoAtivo()
-            console.log('Enviando mensagem para ', sucessorAtivo)
+            // console.log(`[${this.serverNumber}] ` + 'Enviando mensagem para ', sucessorAtivo)
             this.enviarMensagemEleicao(sucessorAtivo, mensagem)
         }
      }
+
+     comecarEleicao() {
+        // cpntata o sucessor
+        let sucessorAtivo = this.sucessor;
+        if (this.servers[String(this.sucessor)].isOnline) {
+            console.log('[3] sucessor está online:', this.sucessor)
+        } else {
+            console.log('[3] sucessor não está online:', this.sucessor)
+
+            sucessorAtivo = this.proximoAtivo()
+
+        }
+
+        if (sucessorAtivo === 0) {
+            //lança erro
+        } else {
+            this.enviarMensagemEleicao(sucessorAtivo, [])
+        }
+
+    }
+
+    verificarCoordenador() {
+        if (!this.servers[String(this.coordenador)].isOnline) {
+            console.log(`[${this.serverNumber}] ` + 'Coordenador não está online', this.coordenador, " começando o processo de eleição")
+            this.comecarEleicao()
+        } else {
+            console.log(`[${this.serverNumber}] ` + 'Coordenador está online', this.coordenador)
+        }
+    }
 }
 
 class Processo1 extends Base {
@@ -175,34 +202,9 @@ class Processo3 extends Base {
         this.coordenador = coordenador;
     }
 
-    verificarCoordenador() {
-        if (!this.servers[String(this.coordenador)].isOnline) {
-            console.log('[3] Coordenador não está online', this.coordenador, " começando o processo de eleição")
-            this.comecarEleicao()
-        } else {
-            console.log('[3] Coordenador está online', this.coordenador)
-        }
-    }
+    
 
-    comecarEleicao() {
-        // cpntata o sucessor
-        let sucessorAtivo = this.sucessor;
-        if (this.servers[String(this.sucessor)].isOnline) {
-            console.log('[3] sucessor está online:', this.sucessor)
-        } else {
-            console.log('[3] sucessor não está online:', this.sucessor)
-
-            sucessorAtivo = this.proximoAtivo()
-
-        }
-
-        if (sucessorAtivo === 0) {
-            //lança erro
-        } else {
-            this.enviarMensagemEleicao(sucessorAtivo, [])
-        }
-
-    }
+  
 }
 
 class Processo4 extends Base {
@@ -265,11 +267,31 @@ function levantarProcessos() {
     processo4.conectarOutrosServidores(processo1, processo2, processo4)
 
     function coordenadorCai() {
+
+       function printarCoordenadores () {
+        console.log('\n--- COORDENADORES ATUAIS ----')
+        console.log('Processo1 está ', processo1.isOnline ? 'online' : 'offline', ' Seu coordenador é:',  processo1.coordenador)
+        console.log('Processo2 está ', processo2.isOnline ? 'online' : 'offline', ' Seu coordenador é:',  processo2.coordenador)
+        console.log('Processo3 está ', processo3.isOnline ? 'online' : 'offline', ' Seu coordenador é:',  processo3.coordenador)
+        console.log('Processo4 está ', processo4.isOnline ? 'online' : 'offline', ' Seu coordenador é:',  processo4.coordenador)
+
+    }
+
+       printarCoordenadores()
+
         // processo2.setIsOnline(false);
         processo4.setIsOnline(false);
-        processo1.setIsOnline(false);
+        // processo1.setIsOnline(false);
 
         processo3.verificarCoordenador()
+        printarCoordenadores()
+
+        processo4.setIsOnline(true);
+        processo3.setIsOnline(false);
+
+        processo2.verificarCoordenador()
+
+        return;
     }
 
     coordenadorCai()
@@ -283,6 +305,8 @@ function levantarProcessos() {
     function percebendoInatividadeCoordenador() {
 
     }
+
+    return ;
 }
 
 levantarProcessos()
