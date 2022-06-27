@@ -90,7 +90,7 @@ class Base {
     }
 
     verificarCoordenador() {
-        if (!this.servers[String(this.coordenador)].isOnline) {
+        if (!this.servers?.[String(this.coordenador)]?.isOnline) {
             console.log(`[${this.serverNumber}] ` + 'Coordenador não está online', this.coordenador, " começando o processo de eleição")
             this.comecarEleicao()
         } else {
@@ -266,130 +266,60 @@ function levantarProcessos() {
     processo3.conectarOutrosServidores(processo1, processo2, processo4)
     processo4.conectarOutrosServidores(processo1, processo2, processo4)
 
-    function coordenadorCai() {
+    function coordenadorCaiEProcessosInativos() {
+        // Essa função é responsável por construir os casos desejados e ver como o algoritmo se comporta
 
-       function printarCoordenadores () {
-        console.log('\n--- COORDENADORES ATUAIS ----')
-        console.log('Processo1 está ', processo1.isOnline ? 'online' : 'offline', ' Seu coordenador é:',  processo1.coordenador)
-        console.log('Processo2 está ', processo2.isOnline ? 'online' : 'offline', ' Seu coordenador é:',  processo2.coordenador)
-        console.log('Processo3 está ', processo3.isOnline ? 'online' : 'offline', ' Seu coordenador é:',  processo3.coordenador)
-        console.log('Processo4 está ', processo4.isOnline ? 'online' : 'offline', ' Seu coordenador é:',  processo4.coordenador)
+        function printarCoordenadores () {
+            console.log('\n--- COORDENADORES ATUAIS ----')
+            console.log('Processo1 está ', processo1.isOnline ? 'online' : 'offline', ' Seu coordenador é:',  processo1.coordenador)
+            console.log('Processo2 está ', processo2.isOnline ? 'online' : 'offline', ' Seu coordenador é:',  processo2.coordenador)
+            console.log('Processo3 está ', processo3.isOnline ? 'online' : 'offline', ' Seu coordenador é:',  processo3.coordenador)
+            console.log('Processo4 está ', processo4.isOnline ? 'online' : 'offline', ' Seu coordenador é:',  processo4.coordenador)
+        }
 
-    }
-
-       printarCoordenadores()
-
-        // processo2.setIsOnline(false);
-        processo4.setIsOnline(false);
-        // processo1.setIsOnline(false);
-
-        processo3.verificarCoordenador()
         printarCoordenadores()
 
+        // Colocando o processo 4 como offline
+        processo4.setIsOnline(false);
+
+        // Processo 3 vai fazer uma verificação periódica e será percebido que o coordenador está offline
+        processo3.verificarCoordenador()
+
+        // Printa como ficou após
+        printarCoordenadores()
+
+        // O Processo 4 entra online e o atual coordenador fica offline
         processo4.setIsOnline(true);
         processo3.setIsOnline(false);
-
+    
+        // O Processo 2 verifica o estado do coordenador
         processo2.verificarCoordenador()
+        printarCoordenadores()
+
+        // O Processo 3 volta a vida e setamos o processo 4 como inativo
+        processo3.setIsOnline(true);
+        processo4.setIsOnline(false);
+        // O Processo 1 verifica o estado do coordenador e percebe que está offline
+        processo1.verificarCoordenador();
+        printarCoordenadores()
+
+        // O processo 3 e 4 ficam offline
+        processo4.setIsOnline(false);
+        processo3.setIsOnline(false);
+
+        // O processo 1 faz verificação periódica e acha um novo
+        processo1.verificarCoordenador();
+
+        printarCoordenadores()
+
 
         return;
     }
 
-    coordenadorCai()
+    coordenadorCaiEProcessosInativos()
 
-
-    function processosInativos() {
-
-    }
-
-
-    function percebendoInatividadeCoordenador() {
-
-    }
 
     return ;
 }
 
 levantarProcessos()
-
-/*
-const server = http.createServer(function(req,res){
-	res.setHeader('Access-Control-Allow-Origin', '*');
-	res.setHeader('Access-Control-Request-Method', '*');
-	res.setHeader('Access-Control-Allow-Methods', 'OPTIONS, GET');
-	res.setHeader('Access-Control-Allow-Headers', '*');
-	if ( req.method === 'OPTIONS' ) {
-		res.writeHead(200);
-		res.end();
-		return;
-	}
-});
-server.listen(8080);
-
-const IO = socketIo(server, {
-    cors: {
-      origin: "*",
-      methods: ["GET"],
-    }
-  });
-  
-
-// Iniciando relógio
-
-let relogioServer = new Date().getTime()
-
-const interval = setInterval(() => {
-    relogioServer += 1000;
-    // console.log('Hora: ', relogioServer, new Date(relogioServer))
-}, 1000)
-
-
-const SERVERS =  {
-}
-
-
-IO.on('connection', socket => {
-    console.log('nova conexão')
-    socket.on('informando-horario', ({ server, relogio }) => {
-        SERVERS[server] = relogio;
-        console.log(SERVERS, Object.keys(SERVERS))
-
-        if (Object.keys(SERVERS).length === 4) {
-            const diferencaHora1 = relogio - SERVERS['1'];
-            const diferencaHora2 = relogio - SERVERS['2'];
-            const diferencaHora3 = relogio - SERVERS['3'];
-            const diferencaHora4 = relogio - SERVERS['4'];
-
-            const media = (diferencaHora1 + diferencaHora2 + diferencaHora3 + diferencaHora4) / 4
-            console.log('A media é essa ', media)
-            // atualiza hora com as médias e manda evento de atualização para todos
-            relogioServer += media;
-
-            console.log('Nova hora, ', relogioServer)
-
-            IO.emit('atualizar-horario', { relogioServer })
-            clearInterval(interval)
-            setInterval(() => {
-                relogioServer += 1000;
-                console.log('Hora: ', relogioServer, new Date(relogioServer))
-            }, 1000)
-
-        }
-    })
-})
-const delay = ms => new Promise(res => setTimeout(res, ms));
-
-async function start() {
-    while (true) {
-        rl.question('Aperte enter para solicitar horários: ', function (matricula) {
-            // socket.emit('login', { matricula, senha })
-            console.log('Solicitando horários')
-            IO.emit('hora-solicitada', {})
-            rl.close();
-        });
-    
-        await delay(3000)
-    }
-}
-
-start()
-*/

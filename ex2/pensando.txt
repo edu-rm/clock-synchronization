@@ -4,7 +4,7 @@ Anel:
     - 4 nós/processos/computadores
 
 Situações:
-    - Coordenador que cai
+    [X] - Coordenador que cai
     - Processos inativos (computadores desligados?)
     - Computadores que percebem a inatividade do coordenador
         - Invocar eleição
